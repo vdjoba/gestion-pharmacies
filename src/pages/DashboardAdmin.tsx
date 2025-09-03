@@ -58,10 +58,54 @@ const DashboardAdmin: React.FC = () => {
       <nav className="flex justify-center mb-8 space-x-8">
         <button className={`text-blue-700 ${activeTab === "dashboard" ? "font-bold border-b-4 border-blue-700" : ""}`} onClick={() => setActiveTab("dashboard")}>Tableau de Bord</button>
         <button className={`text-blue-700 ${activeTab === "medicaments" ? "font-bold border-b-4 border-blue-700" : ""}`} onClick={() => setActiveTab("medicaments")}>Médicaments</button>
+        <button className={`text-blue-700 ${activeTab === "produits" ? "font-bold border-b-4 border-blue-700" : ""}`} onClick={() => setActiveTab("produits")}>Produits</button>
         <button className={`text-blue-700 ${activeTab === "stocks" ? "font-bold border-b-4 border-blue-700" : ""}`} onClick={() => setActiveTab("stocks")}>Stocks</button>
         <button className={`text-blue-700 ${activeTab === "utilisateurs" ? "font-bold border-b-4 border-blue-700" : ""}`} onClick={() => setActiveTab("utilisateurs")}>Utilisateurs</button>
         <button className={`text-blue-700 ${activeTab === "ventes" ? "font-bold border-b-4 border-blue-700" : ""}`} onClick={() => setActiveTab("ventes")}>Ventes</button>
       </nav>
+      {activeTab === "produits" && (
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Produits par catégorie</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+              <h3 className="text-lg font-bold mb-2">Ordonnance</h3>
+              {medicaments.filter(med => med.categorie === "ordonnance").map(med => (
+                <div key={med.id} className="border rounded p-2 mb-2">
+                  <span className="font-semibold">{med.nom}</span>
+                  <span className="ml-2">{med.prix} FCA</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold mb-2">Vente libre</h3>
+              {medicaments.filter(med => med.categorie === "vente libre").map(med => (
+                <div key={med.id} className="border rounded p-2 mb-2">
+                  <span className="font-semibold">{med.nom}</span>
+                  <span className="ml-2">{med.prix} FCA</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold mb-2">Spécialisé</h3>
+              {medicaments.filter(med => med.categorie === "spécialisé").map(med => (
+                <div key={med.id} className="border rounded p-2 mb-2">
+                  <span className="font-semibold">{med.nom}</span>
+                  <span className="ml-2">{med.prix} FCA</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold mb-2">Produit de santé</h3>
+              {medicaments.filter(med => med.categorie === "produit de santé").map(med => (
+                <div key={med.id} className="border rounded p-2 mb-2">
+                  <span className="font-semibold">{med.nom}</span>
+                  <span className="ml-2">{med.prix} FCA</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       {activeTab === "medicaments" && (
         <section>
           <h2 className="text-2xl font-semibold mb-4">Gestion des Médicaments</h2>

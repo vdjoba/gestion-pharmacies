@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Medicament = require('./Medicament'); // Assurez-vous que le chemin est correct
 const cors = require('cors'); // Importer le package cors
+const User = require('./User');
+const jwt = require('jsonwebtoken');
+const SECRET = 'pharmacie_secret_key';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -85,6 +88,32 @@ app.delete('/medicaments/:id', async (req, res) => {
     }
 });
 
+// Inscription
+app.post('/register', async (req, res) => {
+  const { email, password, role } = req.body;
+  try {
+    const user = new User({ email, password, role });
+    await user.save();
+    res.status(201).json({ message: 'Utilisateur créé' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Connexion
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ message: 'Utilisateur non trouvé' });
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(401).json({ message: 'Mot de passe incorrect' });
+    const token = jwt.sign({ userId: user._id, role: user.role }, SECRET, { expiresIn: '1d' });
+    res.json({ token, role: user.role });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 // Démarrer le serveur
 app.listen(PORT, () => {
     console.log(`Serveur en cours d'exécution sur http://localhost:${PORT}`);
