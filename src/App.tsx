@@ -4,6 +4,7 @@ import axios from 'axios';
 import Home from './pages/Home';
 import MedicineDetail from './components/MedicineDetail';
 import LoginPage from './pages/auth/LoginPage';
+import ResetPassword from './pages/auth/./ResetPassword';
 import RegisterPage from './pages/auth/RegisterPage';
 import Layout from './components/Layout';
 import ProductPage from './pages/Product/ProductPage';
@@ -12,7 +13,6 @@ import OrderForm from './components/OrderForm';
 import ReservationForm from './components/ReservationForm';
 import PrescriptionForm from './components/PrescriptionForm';
 import ProductList from './components/ProductList';
-import DashboardAdmin from './pages/DashboardAdmin';
 import PharmacienDashboard from './pages/PharmacienDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -63,6 +63,7 @@ const App: React.FC = () => {
                     <Route path="/product-list" element={<ProductList />} />
                     <Route path="/pharmacien-dashboard" element={<PharmacienDashboard />} />
                     <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                 </Routes>
             </Layout>
         </Router>

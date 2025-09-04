@@ -80,6 +80,14 @@ const LoginPage: React.FC = () => {
         <div className="text-center text-sm">
           <a href="/register" className="text-blue-600 hover:underline">Pas de compte ? S'inscrire</a>
         </div>
+        <div className="text-center text-sm mt-4">
+          <button
+            onClick={() => navigate('/reset-password')}
+            className="text-blue-600 hover:underline"
+          >
+            Réinitialiser le mot de passe
+          </button>
+        </div>
       </div>
     </div>
   );

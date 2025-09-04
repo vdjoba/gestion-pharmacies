@@ -5,13 +5,15 @@ const Header: React.FC = () => {
     return (
         <header className="bg-white shadow-md">
             <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
-                
                 <div>
                     <Link to="/" className="text-gray-600 px-4 py-2 hover:text-blue-600">
                         Accueil
                     </Link>
                     <Link to="/admin-dashboard" className="text-gray-600 px-4 py-2 hover:text-blue-600">
-                        Tableau de bord
+                        Tableau de bord Admin
+                    </Link>
+                    <Link to="/pharmacien-dashboard" className="text-gray-600 px-4 py-2 hover:text-blue-600">
+                        Tableau de bord Pharmacien
                     </Link>
                     <Link to="/products" className="text-gray-600 px-4 py-2 hover:text-blue-600">
                         Produits
