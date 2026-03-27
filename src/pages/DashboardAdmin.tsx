@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { buildApiUrl } from "../services/medicineService";
 
-// Définition du type pour un médicament
 interface Medicament {
   nom: string;
   quantite: number;
@@ -14,18 +14,30 @@ interface Medicament {
   id?: number;
 }
 
+interface BackendMedicament {
+  _id?: number;
+  id?: number;
+  name: string;
+  quantity: number;
+  price: number;
+  isOverTheCounter?: boolean;
+  therapeutique?: string;
+  systeme?: string;
+  forme?: string;
+  imageUrl?: string;
+  alternatives?: string[];
+}
+
 const DashboardAdmin: React.FC = () => {
   const [activeTab, setActiveTab] = useState("medicaments");
   const [medicaments, setMedicaments] = useState<Medicament[]>([]);
   const [form, setForm] = useState<Medicament>({ nom: "", quantite: 0, prix: 0, categorie: "vente libre", therapeutique: "", systeme: "", forme: "", imageUrl: "", alternatives: "" });
 
   useEffect(() => {
-    fetch("http://localhost:3000/medicaments")
+    fetch(buildApiUrl("/medicaments"))
       .then(res => res.json())
       .then(async data => {
-        // Pour chaque médicament, récupérer l'image depuis l'API publique
-        const medsWithImages = await Promise.all(data.map(async (med: any) => {
-          // Adapter les propriétés du backend à celles attendues par le front
+        const medsWithImages = await Promise.all(data.map(async (med: BackendMedicament) => {
           const mappedMed = {
             nom: med.name,
             quantite: med.quantity,
@@ -111,8 +123,7 @@ const DashboardAdmin: React.FC = () => {
           <h2 className="text-2xl font-semibold mb-4">Gestion des Médicaments</h2>
           <form className="mb-6 space-y-4" onSubmit={async e => {
             e.preventDefault();
-            // Création côté backend
-            const response = await fetch("http://localhost:3000/medicaments", {
+            const response = await fetch(buildApiUrl("/medicaments"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(form)
@@ -151,7 +162,7 @@ const DashboardAdmin: React.FC = () => {
               <option value="injection">Injection</option>
               <option value="autre">Autre</option>
             </select>
-            <input type="text" placeholder="URL de l'image" className="w-full border rounded px-4 py-2" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} />
+            <input type="text" placeholder="URL de l'image (optionnel)" className="w-full border rounded px-4 py-2" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} />
             <input type="text" placeholder="Alternatives (IDs séparés par des virgules)" className="w-full border rounded px-4 py-2" value={form.alternatives} onChange={e => setForm({ ...form, alternatives: e.target.value })} />
             <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Ajouter</button>
           </form>
@@ -186,9 +197,8 @@ const DashboardAdmin: React.FC = () => {
                     <td>{med.alternatives || "-"}</td>
                     <td>
                       <button className="text-yellow-600 mr-2" onClick={async () => {
-                        // Modification côté backend
                         const updatedMed = { ...med, nom: prompt("Nouveau nom", med.nom) || med.nom };
-                        await fetch(`http://localhost:3000/medicaments/${med.id}`, {
+                        await fetch(buildApiUrl(`/medicaments/${med.id}`), {
                           method: "PUT",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(updatedMed)
@@ -196,8 +206,7 @@ const DashboardAdmin: React.FC = () => {
                         setMedicaments(medicaments.map(m => m.id === med.id ? updatedMed : m));
                       }}>Modifier</button>
                       <button className="text-red-600" onClick={async () => {
-                        // Suppression côté backend
-                        await fetch(`http://localhost:3000/medicaments/${med.id}`, { method: "DELETE" });
+                        await fetch(buildApiUrl(`/medicaments/${med.id}`), { method: "DELETE" });
                         setMedicaments(medicaments.filter(m => m.id !== med.id));
                       }}>Supprimer</button>
                     </td>

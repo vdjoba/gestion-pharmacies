@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "react-scripts start",
+    "start": "vite",
     "build:css": "tailwindcss build src/styles.css -o dist/styles.css"
   },
   "dependencies": {

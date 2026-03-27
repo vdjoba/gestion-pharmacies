@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from '../../services/medicineService';
 
 const ResetPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ const ResetPassword: React.FC = () => {
 
     // Envoyer une demande de réinitialisation de mot de passe
     try {
-      const res = await fetch('http://localhost:3000/reset-password', {
+      const res = await fetch(buildApiUrl('/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -21,12 +22,11 @@ const ResetPassword: React.FC = () => {
 
       if (res.ok) {
         setMessage('Un lien de réinitialisation a été envoyé à votre email.');
-        // Rediriger l'utilisateur après succès
-        setTimeout(() => navigate('/login'), 3000); // Redirige vers la page de connexion après 3 secondes
+        setTimeout(() => navigate('/login'), 3000);
       } else {
         setMessage(data.message || 'Erreur lors de la réinitialisation.');
       }
-    } catch (err) {
+    } catch {
       setMessage('Erreur serveur');
     }
   };

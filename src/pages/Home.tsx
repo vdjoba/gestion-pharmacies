@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const PharmacieInternationalePK14: React.FC = () => {
+const Home: React.FC = () => {
     const navigate = useNavigate();
     const [role, setRole] = useState<string | null>(null);
 
-    // Déclaration des fonctions AVANT tout rendu JSX
     const handleCheckAvailability = () => {
         navigate('/demande');
     };
+
     const handleOrder = () => {
         navigate('/commander');
     };
+
     const handleReserve = () => {
         navigate('/reserver');
     };
+
     const handleSubmitPrescription = () => {
         navigate('/ordonance');
     };
@@ -28,21 +30,29 @@ const PharmacieInternationalePK14: React.FC = () => {
         return (
             <div className="w-full bg-white py-8">
                 <div className="container mx-auto px-4">
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <h1 className="text-3xl font-bold mb-6 text-center text-green-700">
+                    <div className="rounded-lg bg-white p-6 shadow-lg">
+                        <h1 className="mb-6 text-center text-3xl font-bold text-green-700">
                             Bienvenue cher client !
                         </h1>
-                        <p className="text-gray-600 mb-8 text-center">
-                            Découvrez nos suggestions et accédez rapidement à la commande ou réservation.
+                        <p className="mb-8 text-center text-gray-600">
+                            Accedez rapidement a la disponibilite, a la commande, a la reservation et au depot d&apos;ordonnance.
                         </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <button onClick={handleOrder} className="bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-lg shadow transition-colors flex flex-col items-center">
-                                <span className="text-xl font-semibold mb-2">Commander</span>
-                                <span className="text-sm">Passer une commande de médicaments</span>
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <button onClick={handleCheckAvailability} className="flex flex-col items-center rounded-lg bg-green-500 p-6 text-white shadow transition-colors hover:bg-green-600">
+                                <span className="mb-2 text-xl font-semibold">Demander la disponibilite</span>
+                                <span className="text-sm">Verifier si votre medicament est disponible</span>
                             </button>
-                            <button onClick={handleReserve} className="bg-yellow-500 hover:bg-yellow-600 text-white p-6 rounded-lg shadow transition-colors flex flex-col items-center">
-                                <span className="text-xl font-semibold mb-2">Réserver</span>
-                                <span className="text-sm">Réserver vos médicaments à l'avance</span>
+                            <button onClick={handleOrder} className="flex flex-col items-center rounded-lg bg-blue-500 p-6 text-white shadow transition-colors hover:bg-blue-600">
+                                <span className="mb-2 text-xl font-semibold">Commander</span>
+                                <span className="text-sm">Passer une commande de medicaments</span>
+                            </button>
+                            <button onClick={handleReserve} className="flex flex-col items-center rounded-lg bg-yellow-500 p-6 text-white shadow transition-colors hover:bg-yellow-600">
+                                <span className="mb-2 text-xl font-semibold">Reserver</span>
+                                <span className="text-sm">Reserver vos medicaments a l&apos;avance</span>
+                            </button>
+                            <button onClick={handleSubmitPrescription} className="flex flex-col items-center rounded-lg bg-purple-500 p-6 text-white shadow transition-colors hover:bg-purple-600">
+                                <span className="mb-2 text-xl font-semibold">Soumettre une ordonnance</span>
+                                <span className="text-sm">Envoyer votre ordonnance a la pharmacie</span>
                             </button>
                         </div>
                     </div>
@@ -50,10 +60,12 @@ const PharmacieInternationalePK14: React.FC = () => {
             </div>
         );
     }
+
     if (role === 'pharmacien') {
         navigate('/pharmacien-dashboard');
         return null;
     }
+
     if (role === 'admin') {
         navigate('/admin-dashboard');
         return null;
@@ -62,44 +74,44 @@ const PharmacieInternationalePK14: React.FC = () => {
     return (
         <div className="w-full bg-white py-8">
             <div className="container mx-auto px-4">
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <h1 className="text-3xl font-bold mb-6 text-center text-green-700">
-                        Bienvenue à la Pharmacie Internationale de PK14
+                <div className="rounded-lg bg-white p-6 shadow-lg">
+                    <h1 className="mb-6 text-center text-3xl font-bold text-green-700">
+                        Bienvenue a la Pharmacie Internationale de PK14
                     </h1>
-                    <p className="text-gray-600 mb-8 text-center">
+                    <p className="mb-8 text-center text-gray-600">
                         Carrefour PK14, +237 243 811 818
                     </p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <button 
-                            onClick={handleCheckAvailability} 
-                            className="bg-green-500 hover:bg-green-600 text-white p-6 rounded-lg shadow transition-colors flex flex-col items-center"
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <button
+                            onClick={handleCheckAvailability}
+                            className="flex flex-col items-center rounded-lg bg-green-500 p-6 text-white shadow transition-colors hover:bg-green-600"
                         >
-                            <span className="text-xl font-semibold mb-2">Vérifier la disponibilité</span>
-                            <span className="text-sm">Rechercher un médicament et voir les détails</span>
+                            <span className="mb-2 text-xl font-semibold">Verifier la disponibilite</span>
+                            <span className="text-sm">Rechercher un medicament et voir les details</span>
                         </button>
 
-                        <button 
-                            onClick={handleOrder} 
-                            className="bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-lg shadow transition-colors flex flex-col items-center"
+                        <button
+                            onClick={handleOrder}
+                            className="flex flex-col items-center rounded-lg bg-blue-500 p-6 text-white shadow transition-colors hover:bg-blue-600"
                         >
-                            <span className="text-xl font-semibold mb-2">Commander</span>
-                            <span className="text-sm">Passer une commande de médicaments</span>
+                            <span className="mb-2 text-xl font-semibold">Commander</span>
+                            <span className="text-sm">Passer une commande de medicaments</span>
                         </button>
 
-                        <button 
-                            onClick={handleReserve} 
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white p-6 rounded-lg shadow transition-colors flex flex-col items-center"
+                        <button
+                            onClick={handleReserve}
+                            className="flex flex-col items-center rounded-lg bg-yellow-500 p-6 text-white shadow transition-colors hover:bg-yellow-600"
                         >
-                            <span className="text-xl font-semibold mb-2">Réserver</span>
-                            <span className="text-sm">Réserver vos médicaments à l'avance</span>
+                            <span className="mb-2 text-xl font-semibold">Reserver</span>
+                            <span className="text-sm">Reserver vos medicaments a l&apos;avance</span>
                         </button>
 
-                        <button 
-                            onClick={handleSubmitPrescription} 
-                            className="bg-purple-500 hover:bg-purple-600 text-white p-6 rounded-lg shadow transition-colors flex flex-col items-center"
+                        <button
+                            onClick={handleSubmitPrescription}
+                            className="flex flex-col items-center rounded-lg bg-purple-500 p-6 text-white shadow transition-colors hover:bg-purple-600"
                         >
-                            <span className="text-xl font-semibold mb-2">Soumettre une ordonnance</span>
+                            <span className="mb-2 text-xl font-semibold">Soumettre une ordonnance</span>
                             <span className="text-sm">Pour une livraison avec ordonnance</span>
                         </button>
                     </div>
@@ -109,4 +121,4 @@ const PharmacieInternationalePK14: React.FC = () => {
     );
 };
 
-export default PharmacieInternationalePK14;
+export default Home;

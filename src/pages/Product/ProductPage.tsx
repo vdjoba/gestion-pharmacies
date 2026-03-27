@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
-
-interface Medicament {
-    _id: string;
-    name: string;
-    quantity: number;
-    price: number;
-    isOverTheCounter?: boolean;
-}
+import type { Medicine } from '../../types/Medicine';
+import { API_BASE_URL } from '../../services/medicineService';
 
 interface ProductPageProps {
-    medicaments: Medicament[];
+    medicaments: Medicine[];
 }
 
 interface CartItem {
@@ -21,13 +15,11 @@ interface CartItem {
 }
 
 const ProductPage: React.FC<ProductPageProps> = ({ medicaments }) => {
-    console.log('medicaments reçus:', medicaments);
-    // État pour le terme de recherche
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [cart, setCart] = useState<CartItem[]>([]);
 
-    const handleAddToCart = (medicament: Medicament) => {
+    const handleAddToCart = (medicament: Medicine) => {
         setCart(prevCart => {
             const existing = prevCart.find(item => item.id === medicament._id);
             if (existing) {
@@ -36,29 +28,27 @@ const ProductPage: React.FC<ProductPageProps> = ({ medicaments }) => {
                         ? { ...item, quantity: item.quantity + 1 }
                         : item
                 );
-            } else {
-                return [
-                    ...prevCart,
-                    {
-                        id: medicament._id,
-                        name: medicament.name,
-                        price: medicament.price,
-                        quantity: 1,
-                        image: getMedicamentImage(medicament.name)
-                    }
-                ];
             }
+
+            return [
+                ...prevCart,
+                {
+                    id: medicament._id,
+                    name: medicament.name,
+                    price: medicament.price,
+                    quantity: 1,
+                    image: getMedicamentImage(medicament)
+                }
+            ];
         });
     };
-    // Filtrage des médicaments en fonction du terme de recherche
-    const filteredMedicaments = medicaments.filter(medicament => {
+
+    const filteredMedicaments = medicaments.filter((medicament) => {
         const matchesSearch = medicament.name.toLowerCase().includes(searchTerm.toLowerCase());
-        if (activeCategory === 'vente-libre') {
-            return matchesSearch && medicament.isOverTheCounter;
-        }
-        return matchesSearch;
+        const matchesCategory = activeCategory === 'all' || medicament.category === activeCategory;
+        return matchesSearch && matchesCategory;
     });
-    console.log('Nom des médicaments affichés:', filteredMedicaments.map(m => m.name));
+
     return (
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Produits</h1>
@@ -69,30 +59,49 @@ const ProductPage: React.FC<ProductPageProps> = ({ medicaments }) => {
                     placeholder="Rechercher un produit..."
                     className="border border-gray-300 rounded-md pl-10 pr-4 py-2 w-full"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)} // Met à jour le terme de recherche
+                    onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-            <div className="flex space-x-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                    className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600${activeCategory === 'all' ? ' ring-2 ring-blue-700' : ''}`}
+                    onClick={() => setActiveCategory('all')}
+                >Tous</button>
                 <button
                     className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600${activeCategory === 'ordonnance' ? ' ring-2 ring-blue-700' : ''}`}
                     onClick={() => setActiveCategory('ordonnance')}
                 >Médicaments sur ordonnance</button>
                 <button
-                    className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600${activeCategory === 'vente-libre' ? ' ring-2 ring-blue-700' : ''}`}
-                    onClick={() => setActiveCategory('vente-libre')}
+                    className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600${activeCategory === 'vente_libre' ? ' ring-2 ring-blue-700' : ''}`}
+                    onClick={() => setActiveCategory('vente_libre')}
                 >Médicaments en vente libre</button>
-                <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Produits de santé</button>
-                <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Médicaments spécialisés</button>
+                <button
+                    className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600${activeCategory === 'produit_sante' ? ' ring-2 ring-blue-700' : ''}`}
+                    onClick={() => setActiveCategory('produit_sante')}
+                >Produits de santé</button>
+                <button
+                    className={`bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600${activeCategory === 'specialise' ? ' ring-2 ring-blue-700' : ''}`}
+                    onClick={() => setActiveCategory('specialise')}
+                >Médicaments spécialisés</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {filteredMedicaments.map((medicament) => (
                     <div key={medicament._id} className="product-card border rounded-md shadow-lg p-2 max-w-xs">
-                        <img src={getMedicamentImage(medicament.name)} alt={medicament.name} className="w-full h-32 object-cover mb-2" />
+                        <img src={getMedicamentImage(medicament)} alt={medicament.name} className="w-full h-32 rounded-md object-cover mb-2" />
                         <div className="flex-grow">
                             <h2 className="text-lg font-semibold truncate">{medicament.name}</h2>
-                            <p className="text-gray-700">Prix : {medicament.price} FCA</p>
+                            <p className="text-gray-700">Prix : {formatPrice(medicament.price)}</p>
+                            <p className="text-gray-500 text-sm">Stock : {medicament.quantity}</p>
                         </div>
                         <button className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 mt-2" onClick={() => handleAddToCart(medicament)}>Ajouter au panier</button>
+                        <a
+                            href={getPinterestUrl(medicament)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 inline-flex w-full justify-center rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                        >
+                            Voir sur Pinterest
+                        </a>
                     </div>
                 ))}
             </div>
@@ -108,12 +117,12 @@ const ProductPage: React.FC<ProductPageProps> = ({ medicaments }) => {
                                     <img src={item.image} alt={item.name} className="w-10 h-10 object-cover mr-2" />
                                     <span className="font-semibold mr-2">{item.name}</span>
                                     <span className="mr-2">x{item.quantity}</span>
-                                    <span className="text-green-700">{item.price * item.quantity} FCA</span>
+                                    <span className="text-green-700">{formatPrice(item.price * item.quantity)}</span>
                                 </li>
                             ))}
                         </ul>
                         <div className="flex justify-between items-center mt-4">
-                            <span className="text-lg font-bold">Prix total : {cart.reduce((total, item) => total + item.price * item.quantity, 0)} FCA</span>
+                            <span className="text-lg font-bold">Prix total : {formatPrice(cart.reduce((total, item) => total + item.price * item.quantity, 0))}</span>
                             <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Valider</button>
                         </div>
                     </>
@@ -125,14 +134,30 @@ const ProductPage: React.FC<ProductPageProps> = ({ medicaments }) => {
 
 export default ProductPage;
 
-const getMedicamentImage = (name: string): string => {
-    const lower = name.toLowerCase();
+const getMedicamentImage = (medicament: Medicine): string => {
+    if (medicament.imageUrl) {
+        return medicament.imageUrl.startsWith('http')
+            ? medicament.imageUrl
+            : `${API_BASE_URL}${medicament.imageUrl}`;
+    }
+
+    const lower = medicament.name.toLowerCase();
     if (lower.includes("amoxicilline")) return "Amoxicilline.jpg";
     if (lower.includes("aspirine")) return "Aspirine.jpg";
-    if (lower.includes("oméprazole")) return "Oméprazole.jpg";
+    if (lower.includes("omeprazole")) return "Omeprazole.jpg";
     if (lower.includes("simvastatine")) return "Simvastatine.jpg";
     if (lower.includes("cephalexine")) return "Cephalexine.jpg";
     if (lower.includes("loperamide")) return "Loperamide.jpg";
-     if (lower.includes("ibuprofen")) return "Ibuprofen.jpg";
+    if (lower.includes("ibuprofen")) return "Ibuprofen.jpg";
     return "para.jpg";
 };
+
+const getPinterestUrl = (medicament: Medicine): string => {
+    if (medicament.pinterestUrl) {
+        return medicament.pinterestUrl;
+    }
+
+    return `https://fr.pinterest.com/search/pins/?q=${encodeURIComponent(medicament.name)}`;
+};
+
+const formatPrice = (price: number): string => `${price.toLocaleString('fr-FR')} XAF`;

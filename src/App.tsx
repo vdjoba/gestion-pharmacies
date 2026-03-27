@@ -15,26 +15,24 @@ import PrescriptionForm from './components/PrescriptionForm';
 import ProductList from './components/ProductList';
 import PharmacienDashboard from './pages/PharmacienDashboard';
 import AdminDashboard from './pages/AdminDashboard';
-
-interface Medicament {
-    _id: string;
-    name: string;
-    quantity: number;
-    price: number;
-    isOverTheCounter?: boolean;
-}
+import type { Medicine } from './types/Medicine';
+import { API_BASE_URL } from './services/medicineService';
 
 const App: React.FC = () => {
-    const [medicaments, setMedicaments] = useState<Medicament[]>([]);
+    const [medicaments, setMedicaments] = useState<Medicine[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [medicamentRefreshKey, setMedicamentRefreshKey] = useState(0);
 
     const fetchMedicaments = async () => {
+        setLoading(true);
+        setError(null);
+
         try {
-            const response = await axios.get<Medicament[]>('http://localhost:3000/medicaments');
+            const response = await axios.get<Medicine[]>(`${API_BASE_URL}/medicaments`);
             setMedicaments(response.data);
-        } catch (error) {
-            console.error('Erreur lors de la récupération des médicaments:', error);
+        } catch (err) {
+            console.error('Erreur lors de la récupération des médicaments:', err);
             setError('Erreur de chargement des médicaments');
         } finally {
             setLoading(false);
@@ -42,8 +40,12 @@ const App: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchMedicaments();
-    }, []);
+        void fetchMedicaments();
+    }, [medicamentRefreshKey]);
+
+    const refreshMedicaments = () => {
+        setMedicamentRefreshKey((current) => current + 1);
+    };
 
     return (
         <Router>
@@ -58,10 +60,10 @@ const App: React.FC = () => {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/commander" element={<OrderForm />} />
                     <Route path="/demande" element={<AvailabilityRequest />} />
-                    <Route path="/reserver" element={<ReservationForm />} /> 
+                    <Route path="/reserver" element={<ReservationForm />} />
                     <Route path="/ordonance" element={<PrescriptionForm />} />
                     <Route path="/product-list" element={<ProductList />} />
-                    <Route path="/pharmacien-dashboard" element={<PharmacienDashboard />} />
+                    <Route path="/pharmacien-dashboard" element={<PharmacienDashboard onMedicamentsChanged={refreshMedicaments} />} />
                     <Route path="/admin-dashboard" element={<AdminDashboard />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                 </Routes>

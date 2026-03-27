@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { buildApiUrl } from '../../services/medicineService';
 
 const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError('');
     try {
-      const response = await axios.post('http://localhost:3000/register', {
+      await axios.post(buildApiUrl('/register'), {
         email,
         password,
         role,
@@ -22,9 +23,10 @@ const RegisterPage: React.FC = () => {
       setError('');
       setSuccess('Inscription réussie ! Redirection...');
       setTimeout(() => navigate('/login'), 1500);
-    } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setError('Erreur : ' + err.response.data.message);
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
+      if (errorMessage) {
+        setError('Erreur : ' + errorMessage);
       } else {
         setError('Erreur serveur inattendue.');
       }

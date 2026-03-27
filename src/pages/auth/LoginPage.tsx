@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { buildApiUrl } from '../../services/medicineService';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
     try {
-      const res = await fetch('http://localhost:3000/login', {
+      const res = await fetch(buildApiUrl('/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -31,7 +32,7 @@ const LoginPage: React.FC = () => {
       } else {
         setError(data.message || 'Erreur de connexion');
       }
-    } catch (err) {
+    } catch {
       setError('Erreur serveur');
     }
   };

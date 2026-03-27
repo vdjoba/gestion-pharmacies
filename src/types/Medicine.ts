@@ -1,8 +1,13 @@
-// src/types/Medicine.ts
 export interface Medicine {
-  id: number;
+  _id: string;
   name: string;
-  quantity?:number;
-  description?: string; 
-  price?: number;       
+  quantity: number;
+  price: number;
+  category: 'ordonnance' | 'vente_libre' | 'specialise' | 'produit_sante';
+  therapeuticClass: 'antipaludique' | 'antitussif' | 'antiinflammatoire' | 'analgesique' | 'autre';
+  healthSystemClass: 'cardiovasculaire' | 'antibiotique' | 'autre';
+  form: 'comprime' | 'sirop' | 'injection' | 'autre';
+  imageUrl?: string;
+  pinterestUrl?: string;
+  alternatives?: Medicine[];
 }

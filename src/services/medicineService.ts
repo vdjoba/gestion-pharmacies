@@ -1,9 +1,12 @@
 import axios from 'axios';
-import type { Medicine } from '../types/Medicine'; // Importez l'interface
+import type { Medicine } from '../types/Medicine';
 
-const API_URL = 'https://api.example.com/medicines'; // Remplacez par votre API
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+const MEDICINE_API_URL = `${API_BASE_URL}/medicaments`;
 
 export const fetchMedicines = async (): Promise<Medicine[]> => {
-  const response = await axios.get<Medicine[]>(API_URL);
-  return response.data; // Assurez-vous que data est un tableau de Medicine
+  const response = await axios.get<Medicine[]>(MEDICINE_API_URL);
+  return response.data;
 };
+
+export const buildApiUrl = (path: string): string => `${API_BASE_URL}${path}`;

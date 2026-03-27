@@ -1,22 +1,21 @@
-// src/components/MedicineList.tsx
 import React, { useEffect, useState } from 'react';
 import { fetchMedicines } from '../services/medicineService';
-import type { Medicine } from '../types/Medicine'; // Utilisez 'import type'
+import type { Medicine } from '../types/Medicine';
 
 const MedicineList: React.FC = () => {
-  const [medicines, setMedicines] = useState<Medicine[]>([]); // Typage de l'état
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
 
   useEffect(() => {
     const getMedicines = async () => {
       try {
-        const data = await fetchMedicines(); // Type est maintenant Medicine[]
-        setMedicines(data); // Aucune erreur ici
+        const data = await fetchMedicines();
+        setMedicines(data);
       } catch (error) {
-        console.error("Erreur lors du chargement des médicaments :", error);
+        console.error('Erreur lors du chargement des médicaments :', error);
       }
     };
 
-    getMedicines();
+    void getMedicines();
   }, []);
 
   return (
@@ -24,7 +23,7 @@ const MedicineList: React.FC = () => {
       <h2>Liste des Médicaments</h2>
       <ul>
         {medicines.map((medicine) => (
-          <li key={medicine.id}>{medicine.name}</li>
+          <li key={medicine._id}>{medicine.name}</li>
         ))}
       </ul>
     </div>

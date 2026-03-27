@@ -1,28 +1,23 @@
 import React from 'react';
-
-interface Medicament {
-    _id: string;
-    name: string;
-    quantity: number;
-    price: number;
-}
+import { useParams } from 'react-router-dom';
+import type { Medicine } from '../types/Medicine';
 
 interface MedicineDetailProps {
-    medicaments: Medicament[];
+    medicaments: Medicine[];
 }
 
 const MedicineDetail: React.FC<MedicineDetailProps> = ({ medicaments }) => {
-    // Vous pouvez récupérer l'ID à partir de l'URL (par exemple, via React Router) pour afficher les détails
-    const medicineId = '...'; // Remplacez ceci par la logique pour récupérer l'ID
-    const medicament = medicaments.find(m => m._id === medicineId);
+    const { id } = useParams<{ id: string }>();
+    const medicament = medicaments.find(m => m._id === id);
 
     return (
         <div>
             {medicament ? (
                 <>
-                    <h2>Détails du Médicament: {medicament.name}</h2>
-                    <p>Prix: {medicament.price} FCA</p>
-                    <p>Quantité: {medicament.quantity}</p>
+                    <h2>Détails du médicament : {medicament.name}</h2>
+                    <p>Prix : {medicament.price} FCA</p>
+                    <p>Quantité : {medicament.quantity}</p>
+                    <p>Catégorie : {medicament.category}</p>
                 </>
             ) : (
                 <p>Médicament non trouvé.</p>

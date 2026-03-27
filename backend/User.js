@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, match: /.+\@.+\..+/ },
   password: { type: String, required: true },
   role: { type: String, default: 'user' },
-});
+}, { timestamps: true });
 
 // Hachage du mot de passe avant sauvegarde
 userSchema.pre('save', async function (next) {
