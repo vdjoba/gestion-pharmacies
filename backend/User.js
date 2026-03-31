@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, match: /.+\@.+\..+/ },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true, match: /.+\@.+\..+/ },
   password: { type: String, required: true },
   role: { type: String, default: 'user' },
 }, { timestamps: true });

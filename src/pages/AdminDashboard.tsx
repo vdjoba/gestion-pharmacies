@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../services/medicineService';
+import { getAuthHeaders } from '../services/auth';
+import PasswordField from '../components/PasswordField';
 
 type UserRole = 'admin' | 'pharmacien' | 'client';
 
@@ -60,6 +62,7 @@ const AdminDashboard: React.FC = () => {
   const [success, setSuccess] = useState('');
 
   const isAdmin = typeof window !== 'undefined' && localStorage.getItem('role') === 'admin';
+  const authHeaders = getAuthHeaders();
 
   const sortedUsers = useMemo(
     () => [...users].sort((a, b) => a.email.localeCompare(b.email)),
@@ -72,8 +75,8 @@ const AdminDashboard: React.FC = () => {
 
     try {
       const [usersResponse, statsResponse] = await Promise.all([
-        axios.get<AdminUser[]>(`${API_BASE_URL}/admin/users`),
-        axios.get<AdminStats>(`${API_BASE_URL}/admin/stats`),
+        axios.get<AdminUser[]>(`${API_BASE_URL}/admin/users`, { headers: authHeaders }),
+        axios.get<AdminStats>(`${API_BASE_URL}/admin/stats`, { headers: authHeaders }),
       ]);
 
       setUsers(usersResponse.data);
@@ -109,10 +112,10 @@ const AdminDashboard: React.FC = () => {
 
     try {
       if (editingUserId) {
-        await axios.put(`${API_BASE_URL}/admin/users/${editingUserId}`, payload);
+        await axios.put(`${API_BASE_URL}/admin/users/${editingUserId}`, payload, { headers: authHeaders });
         setSuccess('Utilisateur mis a jour.');
       } else {
-        await axios.post(`${API_BASE_URL}/admin/users`, payload);
+        await axios.post(`${API_BASE_URL}/admin/users`, payload, { headers: authHeaders });
         setSuccess('Utilisateur ajoute.');
       }
 
@@ -148,7 +151,7 @@ const AdminDashboard: React.FC = () => {
     setSuccess('');
 
     try {
-      await axios.delete(`${API_BASE_URL}/admin/users/${user._id}`);
+      await axios.delete(`${API_BASE_URL}/admin/users/${user._id}`, { headers: authHeaders });
 
       if (editingUserId === user._id) {
         resetForm();
@@ -260,14 +263,13 @@ const AdminDashboard: React.FC = () => {
               <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="admin-password">
                 {editingUserId ? 'Nouveau mot de passe (optionnel)' : 'Mot de passe'}
               </label>
-              <input
+              <PasswordField
                 id="admin-password"
-                type="password"
                 required={!editingUserId}
                 value={form.password}
-                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500"
+                onChange={(value) => setForm((current) => ({ ...current, password: value }))}
                 placeholder={editingUserId ? 'Laisser vide pour conserver le mot de passe actuel' : 'Mot de passe'}
+                autoComplete={editingUserId ? 'new-password' : 'new-password'}
               />
             </div>
 

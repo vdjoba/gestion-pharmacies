@@ -10,17 +10,35 @@ const PharmacyRequest = require('./PharmacyRequest');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 
-const SECRET = 'pharmacie_secret_key';
+const SECRET = process.env.JWT_SECRET || 'pharmacie_secret_key';
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/medicaments';
+const allowedWebOrigins = (process.env.ALLOWED_WEB_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
 const uploadsDirectory = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(uploadsDirectory)) {
     fs.mkdirSync(uploadsDirectory, { recursive: true });
 }
 
-app.use(cors());
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+
+        if (allowedWebOrigins.length === 0 || allowedWebOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error('Origine non autorisee par la configuration CORS'));
+    }
+}));
 app.use(express.json());
 app.use('/uploads', express.static(uploadsDirectory));
 
@@ -61,6 +79,100 @@ const parseAlternatives = (alternatives) => {
     return [];
 };
 
+const normalizeEmail = (email) => {
+    if (typeof email !== 'string') {
+        return '';
+    }
+
+    return email.trim().toLowerCase();
+};
+
+const getTokenFromRequest = (req) => {
+    const authorizationHeader = req.headers.authorization || '';
+    if (!authorizationHeader.startsWith('Bearer ')) {
+        return null;
+    }
+
+    return authorizationHeader.slice(7);
+};
+
+const authenticate = async (req, res, next) => {
+    const token = getTokenFromRequest(req);
+
+    if (!token) {
+        return res.status(401).json({ message: 'Authentification requise' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, SECRET);
+        const user = await User.findById(decoded.userId);
+
+        if (!user) {
+            return res.status(401).json({ message: 'Utilisateur introuvable' });
+        }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: 'Session invalide ou expiree' });
+    }
+};
+
+const authorizeRoles = (...roles) => (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+        return res.status(403).json({ message: 'Acces refuse' });
+    }
+
+    next();
+};
+
+const allowedRoles = ['admin', 'pharmacien', 'client'];
+
+const normalizePortal = (portal) => {
+    if (portal === 'admin' || portal === 'client') {
+        return portal;
+    }
+
+    return '';
+};
+
+const validateRole = (role) => allowedRoles.includes(role);
+
+const requirePortalAccess = (portal, role) => {
+    if (portal === 'admin') {
+        return role === 'admin' || role === 'pharmacien';
+    }
+
+    if (portal === 'client') {
+        return role === 'client';
+    }
+
+    return true;
+};
+
+const serializePharmacyRequest = (request) => ({
+    _id: request._id,
+    clientId: request.clientId,
+    clientEmail: request.clientEmail,
+    type: request.type,
+    medicationName: request.medicationName,
+    quantity: request.quantity,
+    contact: request.contact,
+    requestedDate: request.requestedDate,
+    status: request.status,
+    pharmacistResponse: {
+        message: request.pharmacistResponse?.message || '',
+        respondedAt: request.pharmacistResponse?.respondedAt || null,
+        respondedBy: request.pharmacistResponse?.respondedBy || null
+    },
+    clientNotification: {
+        isUnread: Boolean(request.clientNotification?.isUnread),
+        notifiedAt: request.clientNotification?.notifiedAt || null
+    },
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt
+});
+
 const normalizeMedicamentPayload = (body, file) => ({
     name: body.name ?? body.nom,
     quantity: Number(body.quantity ?? body.quantite ?? 0),
@@ -77,6 +189,13 @@ const normalizeMedicamentPayload = (body, file) => ({
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('Connecté à MongoDB'))
     .catch(err => console.error('Erreur de connexion à MongoDB:', err));
+
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
 
 app.get('/medicaments', async (req, res) => {
     try {
@@ -101,7 +220,7 @@ app.get('/medicaments/:id', async (req, res) => {
     }
 });
 
-app.post('/medicaments', upload.single('image'), async (req, res) => {
+app.post('/medicaments', authenticate, authorizeRoles('pharmacien', 'admin'), upload.single('image'), async (req, res) => {
     const payload = normalizeMedicamentPayload(req.body, req.file);
 
     if (!payload.name || !payload.quantity || !payload.price || !payload.category || !payload.therapeuticClass || !payload.healthSystemClass || !payload.form) {
@@ -119,7 +238,7 @@ app.post('/medicaments', upload.single('image'), async (req, res) => {
     }
 });
 
-app.put('/medicaments/:id', upload.single('image'), async (req, res) => {
+app.put('/medicaments/:id', authenticate, authorizeRoles('pharmacien', 'admin'), upload.single('image'), async (req, res) => {
     try {
         const current = await Medicament.findById(req.params.id);
         if (!current) {
@@ -145,7 +264,7 @@ app.put('/medicaments/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-app.delete('/medicaments/:id', async (req, res) => {
+app.delete('/medicaments/:id', authenticate, authorizeRoles('pharmacien', 'admin'), async (req, res) => {
     try {
         const deletedMedicament = await Medicament.findByIdAndDelete(req.params.id);
         if (!deletedMedicament) {
@@ -158,17 +277,27 @@ app.delete('/medicaments/:id', async (req, res) => {
     }
 });
 
-app.get('/pharmacy-requests', async (req, res) => {
+app.get('/pharmacy-requests', authenticate, authorizeRoles('pharmacien', 'admin'), async (req, res) => {
     try {
         const requests = await PharmacyRequest.find().sort({ createdAt: -1 });
-        res.json(requests);
+        res.json(requests.map(serializePharmacyRequest));
     } catch (error) {
         console.error('Erreur lors de la recuperation des demandes pharmacie :', error);
         res.status(500).json({ message: 'Erreur serveur' });
     }
 });
 
-app.post('/pharmacy-requests', async (req, res) => {
+app.get('/my-pharmacy-requests', authenticate, authorizeRoles('client'), async (req, res) => {
+    try {
+        const requests = await PharmacyRequest.find({ clientId: req.user._id }).sort({ createdAt: -1 });
+        res.json(requests.map(serializePharmacyRequest));
+    } catch (error) {
+        console.error('Erreur lors de la recuperation des demandes client :', error);
+        res.status(500).json({ message: 'Erreur serveur' });
+    }
+});
+
+app.post('/pharmacy-requests', authenticate, authorizeRoles('client'), async (req, res) => {
     const { type, medicationName, quantity, contact, requestedDate } = req.body;
 
     if (!type || !medicationName || !contact) {
@@ -177,6 +306,8 @@ app.post('/pharmacy-requests', async (req, res) => {
 
     try {
         const newRequest = new PharmacyRequest({
+            clientId: req.user._id,
+            clientEmail: req.user.email,
             type,
             medicationName,
             quantity: Number(quantity || 1),
@@ -185,18 +316,18 @@ app.post('/pharmacy-requests', async (req, res) => {
         });
 
         await newRequest.save();
-        res.status(201).json(newRequest);
+        res.status(201).json(serializePharmacyRequest(newRequest));
     } catch (error) {
         console.error('Erreur lors de la creation de la demande pharmacie :', error);
         res.status(500).json({ message: 'Erreur serveur' });
     }
 });
 
-app.patch('/pharmacy-requests/:id', async (req, res) => {
-    const { status } = req.body;
+app.patch('/pharmacy-requests/:id', authenticate, authorizeRoles('pharmacien', 'admin'), async (req, res) => {
+    const { status, pharmacistMessage } = req.body;
 
-    if (!status) {
-        return res.status(400).json({ message: 'Le statut est requis' });
+    if (!status && !pharmacistMessage) {
+        return res.status(400).json({ message: 'Le statut ou la reponse pharmacien est requis' });
     }
 
     try {
@@ -206,7 +337,9 @@ app.patch('/pharmacy-requests/:id', async (req, res) => {
             return res.status(404).json({ message: 'Demande non trouvee' });
         }
 
-        const shouldAdjustStock = status === 'traite'
+        const nextStatus = status || request.status;
+
+        const shouldAdjustStock = nextStatus === 'traite'
             && !request.stockAdjusted
             && ['commande', 'reservation'].includes(request.type);
 
@@ -226,19 +359,60 @@ app.patch('/pharmacy-requests/:id', async (req, res) => {
             request.stockAdjusted = true;
         }
 
-        request.status = status;
+        request.status = nextStatus;
+
+        if (typeof pharmacistMessage === 'string' && pharmacistMessage.trim()) {
+            request.pharmacistResponse = {
+                message: pharmacistMessage.trim(),
+                respondedAt: new Date(),
+                respondedBy: req.user._id
+            };
+            request.clientNotification = {
+                isUnread: true,
+                notifiedAt: new Date()
+            };
+        }
+
         await request.save();
 
-        res.json(request);
+        res.json(serializePharmacyRequest(request));
     } catch (error) {
         console.error('Erreur lors de la mise a jour de la demande pharmacie :', error);
         res.status(500).json({ message: 'Erreur serveur' });
     }
 });
 
+app.patch('/my-pharmacy-requests/:id/read', authenticate, authorizeRoles('client'), async (req, res) => {
+    try {
+        const request = await PharmacyRequest.findOne({ _id: req.params.id, clientId: req.user._id });
+
+        if (!request) {
+            return res.status(404).json({ message: 'Demande non trouvee' });
+        }
+
+        if (!request.clientNotification) {
+            request.clientNotification = { isUnread: false, notifiedAt: null };
+        } else {
+            request.clientNotification.isUnread = false;
+        }
+        await request.save();
+
+        res.json(serializePharmacyRequest(request));
+    } catch (error) {
+        console.error('Erreur lors de la lecture de la notification client :', error);
+        res.status(500).json({ message: 'Erreur serveur' });
+    }
+});
+
 app.post('/register', async (req, res) => {
     console.log('Inscription demandée avec :', req.body);
-    const { email, password, role } = req.body;
+    const password = req.body.password;
+    const role = req.body.role === 'client' ? 'client' : '';
+    const email = normalizeEmail(req.body.email);
+
+    if (!email || !password || !role) {
+        return res.status(400).json({ message: 'Email, mot de passe et role client sont requis' });
+    }
 
     try {
         const existingUser = await User.findOne({ email });
@@ -257,7 +431,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-app.get('/admin/users', async (req, res) => {
+app.get('/admin/users', authenticate, authorizeRoles('admin'), async (req, res) => {
     try {
         const users = await User.find().sort({ createdAt: -1, email: 1 });
         res.json(users.map(sanitizeUser));
@@ -267,11 +441,17 @@ app.get('/admin/users', async (req, res) => {
     }
 });
 
-app.post('/admin/users', async (req, res) => {
-    const { email, password, role } = req.body;
+app.post('/admin/users', authenticate, authorizeRoles('admin'), async (req, res) => {
+    const password = req.body.password;
+    const role = req.body.role;
+    const email = normalizeEmail(req.body.email);
 
     if (!email || !password || !role) {
         return res.status(400).json({ message: 'Email, mot de passe et rÃ´le sont requis' });
+    }
+
+    if (!validateRole(role)) {
+        return res.status(400).json({ message: 'Role invalide' });
     }
 
     try {
@@ -289,11 +469,17 @@ app.post('/admin/users', async (req, res) => {
     }
 });
 
-app.put('/admin/users/:id', async (req, res) => {
-    const { email, password, role } = req.body;
+app.put('/admin/users/:id', authenticate, authorizeRoles('admin'), async (req, res) => {
+    const password = req.body.password;
+    const role = req.body.role;
+    const email = normalizeEmail(req.body.email);
 
     if (!email || !role) {
         return res.status(400).json({ message: 'Email et rÃ´le sont requis' });
+    }
+
+    if (!validateRole(role)) {
+        return res.status(400).json({ message: 'Role invalide' });
     }
 
     try {
@@ -322,7 +508,7 @@ app.put('/admin/users/:id', async (req, res) => {
     }
 });
 
-app.delete('/admin/users/:id', async (req, res) => {
+app.delete('/admin/users/:id', authenticate, authorizeRoles('admin'), async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) {
@@ -336,7 +522,7 @@ app.delete('/admin/users/:id', async (req, res) => {
     }
 });
 
-app.get('/admin/stats', async (req, res) => {
+app.get('/admin/stats', authenticate, authorizeRoles('admin'), async (req, res) => {
     try {
         const [users, medicaments] = await Promise.all([
             User.find(),
@@ -381,7 +567,9 @@ app.get('/admin/stats', async (req, res) => {
 app.post('/login', async (req, res) => {
     console.log('Requête reçue pour connexion :', req.body);
     try {
-        const user = await User.findOne({ email: req.body.email });
+        const email = normalizeEmail(req.body.email);
+        const portal = normalizePortal(req.body.portal);
+        const user = await User.findOne({ email });
         if (!user) {
             console.log('Utilisateur non trouvé');
             return res.status(401).json({ message: 'Utilisateur non trouvé' });
@@ -393,9 +581,17 @@ app.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Mot de passe incorrect' });
         }
 
+        if (!requirePortalAccess(portal, user.role)) {
+            return res.status(403).json({
+                message: portal === 'admin'
+                    ? "Ce compte n'est pas autorise sur l'administration interne"
+                    : "Ce compte doit se connecter via l'interface d'administration"
+            });
+        }
+
         console.log('Connexion réussie pour l\'utilisateur :', user.email);
         const token = jwt.sign({ userId: user._id, role: user.role }, SECRET, { expiresIn: '1d' });
-        res.json({ token, role: user.role });
+        res.json({ token, role: user.role, user: sanitizeUser(user) });
     } catch (error) {
         console.error('Erreur lors de la connexion :', error);
         res.status(500).json({ message: 'Erreur interne du serveur' });
@@ -403,7 +599,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.post('/reset-password', async (req, res) => {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     try {
         const user = await User.findOne({ email });

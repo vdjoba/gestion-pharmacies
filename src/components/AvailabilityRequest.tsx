@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getAuthHeaders } from '../services/auth';
 import { buildApiUrl } from '../services/medicineService';
 
 const AvailabilityRequest: React.FC = () => {
@@ -15,7 +16,7 @@ const AvailabilityRequest: React.FC = () => {
         try {
             const response = await fetch(buildApiUrl('/pharmacy-requests'), {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                 body: JSON.stringify({
                     type: 'disponibilite',
                     medicationName: medication,
@@ -41,6 +42,9 @@ const AvailabilityRequest: React.FC = () => {
     return (
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Demande de Disponibilite d'un Medicament</h1>
+            <p className="mb-4 text-sm text-slate-600">
+                Le pharmacien pourra vous repondre directement et vous retrouverez cette notification dans votre interface privee.
+            </p>
             <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-md p-4">
                 <div className="mb-4">
                     <label className="block text-gray-700 mb-2" htmlFor="medication">

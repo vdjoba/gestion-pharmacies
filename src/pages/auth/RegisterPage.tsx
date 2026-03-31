@@ -2,92 +2,74 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { buildApiUrl } from '../../services/medicineService';
+import PasswordField from '../../components/PasswordField';
 
 const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('client');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
+
     try {
       await axios.post(buildApiUrl('/register'), {
-        email,
+        email: email.trim().toLowerCase(),
         password,
-        role,
+        role: 'client',
       });
-      setError('');
-      setSuccess('Inscription réussie ! Redirection...');
-      setTimeout(() => navigate('/login'), 1500);
-    } catch (err: unknown) {
-      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
-      if (errorMessage) {
-        setError('Erreur : ' + errorMessage);
-      } else {
-        setError('Erreur serveur inattendue.');
-      }
+      setSuccess('Inscription reussie. Redirection vers la connexion...');
+      window.setTimeout(() => navigate('/login'), 1500);
+    } catch (requestError: unknown) {
+      const errorMessage = (requestError as { response?: { data?: { message?: string } } }).response?.data?.message;
+      setError(errorMessage ? `Erreur : ${errorMessage}` : 'Erreur serveur inattendue.');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex min-h-[calc(100vh-180px)] items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8 rounded-3xl bg-white p-8 shadow-sm">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Créez un compte utilisateur
-          </h2>
+          <p className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">Compte Client</p>
+          <h2 className="mt-4 text-center text-3xl font-extrabold text-slate-900">Creer votre compte web</h2>
+          <p className="mt-3 text-center text-sm text-slate-500">
+            La creation des comptes staff reste reservee a l&apos;administration interne.
+          </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Adresse email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Mot de passe"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
-            </div>
-            <div>
-              <select
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                value={role}
-                onChange={e => setRole(e.target.value)}
-              >
-                <option value="client">Client</option>
-                <option value="pharmacien">Pharmacien</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-3">
+            <input
+              type="email"
+              required
+              className="block w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none focus:border-blue-500"
+              placeholder="Adresse email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+            <PasswordField
+              required
+              value={password}
+              onChange={setPassword}
+              placeholder="Mot de passe"
+              autoComplete="new-password"
+            />
           </div>
-          {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
-          {success && <div className="text-green-600 text-sm mb-2">{success}</div>}
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              S'inscrire
-            </button>
-          </div>
+          {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
+          {success && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
+          <button
+            type="submit"
+            className="flex w-full justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            S&apos;inscrire
+          </button>
         </form>
         <div className="text-center text-sm">
-          <a href="/login" className="text-blue-600 hover:underline">Déjà un compte ? Se connecter</a>
+          <a href="/login" className="text-blue-600 hover:underline">
+            Deja un compte ? Se connecter
+          </a>
         </div>
       </div>
     </div>
